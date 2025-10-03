@@ -1,0 +1,246 @@
+/* styles.css - Estilos principais do jogo */
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+canvas {
+    background-color: #ecf0f1;
+    display: block;
+    margin: 20px auto;
+    border: 3px solid #2c3e50;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+h1 {
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 10px;
+}
+
+.instructions {
+    text-align: center;
+    color: white;
+    background: rgba(0,0,0,0.3);
+    padding: 10px;
+    border-radius: 5px;
+    margin: 0 auto 20px auto;
+    max-width: 600px;
+}
+
+.game-info {
+    text-align: center;
+    color: white;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* Animações para mensagens */
+@keyframes slideIn {
+    from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+}
+
+@keyframes slideOut {
+    from { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    }
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.8); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 60%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    80% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Mensagens de notificação */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+    background: #28a745;
+}
+
+.notification.warning {
+    background: #ffc107;
+}
+
+.notification.error {
+    background: #dc3545;
+}
+
+.notification.info {
+    background: #17a2b8;
+}
+
+/* Placar */
+.scoreboard {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #333;
+    font-family: Arial, sans-serif;
+    z-index: 100;
+    animation: fadeIn 0.5s ease;
+}
+
+.scoreboard h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+}
+
+.scoreboard .player-score {
+    margin: 5px 0;
+    transition: all 0.3s ease;
+}
+
+.scoreboard .player-score.highlight {
+    font-weight: bold;
+    color: #e74c3c;
+    animation: bounce 0.5s ease;
+}
+
+/* Setup do jogador */
+.player-setup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    z-index: 1000;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    animation: fadeIn 0.5s ease;
+}
+
+.player-setup h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.player-setup input {
+    margin: 5px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.player-setup button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.player-setup button:hover {
+    background: #2980b9;
+}
+
+/* Chat (se implementado) */
+.chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    border: 2px solid #333;
+    z-index: 100;
+}
+
+.chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 12px;
+}
+
+.chat-input {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-top: 1px solid #ddd;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    canvas {
+        width: 100%;
+        max-width: 600px;
+    }
+    
+    .instructions {
+        font-size: 14px;
+        padding: 8px;
+    }
+    
+    .scoreboard {
+        font-size: 12px;
+        padding: 10px;
+    }
+    
+    .chat-container {
+        width: 250px;
+    }
+}

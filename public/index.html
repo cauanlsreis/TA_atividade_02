@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Multiplayer - TA Atividade 02</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>🎮 Jogo Multiplayer</h1>
+    <div class="instructions">
+        <strong>Instruções:</strong> Use as setas do teclado para mover. Colete itens dourados (🟨 10pts) e vermelhos (🟥 25pts) para ganhar pontos!
+    </div>
+    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <div class="game-info">
+        <p>Jogadores online se movem em tempo real. Evite as barreiras e colete o máximo de pontos!</p>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/gameClient.js"></script>
+</body>
+</html>
