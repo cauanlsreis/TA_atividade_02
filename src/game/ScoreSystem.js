@@ -4,6 +4,7 @@ class ScoreSystem {
     constructor() {
         this.globalScore = {};
         this.achievements = {};
+        this.currentLeader = null; // Rastrear líder atual
     }
 
     // Adicionar jogador ao sistema de pontuação
@@ -32,10 +33,38 @@ class ScoreSystem {
                 this.globalScore[playerId].gemsCollected++;
             }
 
-            // Verificar conquistas
-            this.checkAchievements(playerId);
+            // Verificar mudança de liderança
+            this.updateLeadership();
+
+            // Verificar conquistas e retorná-las
+            return this.checkAchievements(playerId);
         }
-        return this.globalScore[playerId]?.score || 0;
+        return [];
+    }
+
+    // Verificar e atualizar liderança
+    updateLeadership() {
+        const topPlayers = this.getTopPlayers(1);
+        const newLeader = topPlayers.length > 0 ? topPlayers[0] : null;
+        
+        // Se há um novo líder diferente do atual
+        if (newLeader && (!this.currentLeader || this.currentLeader.name !== newLeader.name)) {
+            this.currentLeader = newLeader;
+            return true; // Mudança de liderança
+        }
+        
+        return false; // Sem mudança
+    }
+
+    // Verificar se deve notificar sobre liderança (apenas com 2+ jogadores)
+    shouldNotifyLeadership() {
+        const playerCount = Object.keys(this.globalScore).length;
+        return playerCount >= 2;
+    }
+
+    // Obter líder atual
+    getCurrentLeader() {
+        return this.currentLeader;
     }
 
     // Verificar conquistas
@@ -81,8 +110,17 @@ class ScoreSystem {
 
     // Remover jogador
     removePlayer(playerId) {
+        // Se o líder saiu, atualizar liderança
+        if (this.currentLeader && this.globalScore[playerId] && 
+            this.currentLeader.name === this.globalScore[playerId].name) {
+            this.currentLeader = null;
+        }
+        
         delete this.globalScore[playerId];
         delete this.achievements[playerId];
+        
+        // Atualizar liderança após remoção
+        this.updateLeadership();
     }
 
     // Obter estatísticas completas do jogador
@@ -97,6 +135,7 @@ class ScoreSystem {
     reset() {
         this.globalScore = {};
         this.achievements = {};
+        this.currentLeader = null;
     }
 }
 

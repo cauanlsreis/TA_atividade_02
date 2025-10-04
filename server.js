@@ -83,29 +83,48 @@ io.on('connection', (socket) => {
             const result = gameManager.movePlayer(socket.id, direction);
             
             if (result && result.moved) {
+                const player = gameManager.players[socket.id];
+                
                 // Enviar atualização de movimento
                 io.emit('playerMoved', { 
                     id: socket.id, 
-                    x: gameManager.players[socket.id].x, 
-                    y: gameManager.players[socket.id].y,
-                    score: result.newScore
+                    x: player.x, 
+                    y: player.y,
+                    score: player.score
                 });
 
                 // Se coletou item
                 if (result.itemCollected) {
-                    const player = gameManager.players[socket.id];
+                    // Verificar se mudou a liderança (apenas com 2+ jogadores)
+                    const shouldNotifyLeader = gameManager.scoreSystem.shouldNotifyLeadership();
+                    const topPlayers = gameManager.scoreSystem.getTopPlayers(1);
+                    const newLeader = topPlayers.length > 0 ? topPlayers[0] : null;
+                    
                     io.emit('itemCollected', {
                         itemId: result.itemCollected.itemId,
                         playerId: socket.id,
                         playerName: player.name,
                         points: result.itemCollected.points,
                         newScore: result.itemCollected.totalScore,
-                        globalScore: gameManager.scoreSystem.globalScore
+                        itemType: result.itemCollected.itemType,
+                        globalScore: gameManager.scoreSystem.globalScore,
+                        newLeader: shouldNotifyLeader ? newLeader : null,
+                        isNewLeader: shouldNotifyLeader && newLeader && newLeader.name === player.name
                     });
 
                     // Enviar conquistas se houver
                     if (result.itemCollected.achievements && result.itemCollected.achievements.length > 0) {
                         socket.emit('achievements', result.itemCollected.achievements);
+                    }
+                    
+                    // Spawnar novo item se necessário
+                    const currentItemCount = Object.keys(gameManager.items).length;
+                    const GAME_CONFIG = require('./src/config/gameConfig');
+                    if (currentItemCount < GAME_CONFIG.MIN_ITEMS) {
+                        const newItem = gameManager.spawnItem();
+                        if (newItem) {
+                            io.emit('newItem', newItem.toJSON());
+                        }
                     }
                 }
             }
@@ -140,7 +159,8 @@ io.on('connection', (socket) => {
                 Utils.log(`${playerName} saiu do jogo`, 'GAME');
                 io.emit('playerDisconnected', {
                     id: socket.id,
-                    name: playerName
+                    name: playerName,
+                    globalScore: gameManager.scoreSystem.globalScore
                 });
             }
         } catch (error) {
@@ -156,11 +176,19 @@ io.on('connection', (socket) => {
 
 // Limpeza periódica de items expirados
 setInterval(() => {
-    const cleanedItems = gameManager.cleanupExpiredItems();
-    if (cleanedItems > 0) {
-        Utils.log(`Limpeza: ${cleanedItems} items expirados removidos`, 'CLEANUP');
+    const cleanupResult = gameManager.cleanupExpiredItems();
+    if (cleanupResult.expired > 0) {
+        Utils.log(`Limpeza: ${cleanupResult.expired} items expirados removidos, ${cleanupResult.spawned} novos items criados. Total: ${cleanupResult.currentTotal}`, 'CLEANUP');
+        
+        // Enviar novos items se foram criados (sem notificação)
+        if (cleanupResult.spawned > 0) {
+            const gameState = gameManager.getGameState();
+            io.emit('gameStateUpdate', {
+                items: gameState.items
+            });
+        }
     }
-}, 30000); // A cada 30 segundos
+}, 10000); // A cada 10 segundos
 
 // Estatísticas periódicas
 setInterval(() => {

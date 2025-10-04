@@ -12,10 +12,14 @@ const GAME_CONFIG = {
     
     // Configurações dos items
     ITEM_SIZE: 15,
-    ITEM_SPAWN_INTERVAL: 3000, // 3 segundos
+    ITEM_SPAWN_INTERVAL: 2000, // 2 segundos
+    ITEM_LIFESPAN: 30000, // 30 segundos antes de expirar
+    MIN_ITEMS: 5, // Mínimo de items na tela
+    MAX_ITEMS: 12, // Máximo de items na tela
     ITEM_VALUES: {
         COIN: 10,
-        GEM: 25
+        GEM: 25,
+        DIAMOND: 50
     },
     
     // Configurações das paredes
@@ -32,8 +36,9 @@ const GAME_CONFIG = {
     COLORS: {
         WALL: '#2c3e50',
         BACKGROUND: '#ecf0f1',
-        COIN: '#f1c40f',
-        GEM: '#e74c3c',
+        COIN: '#f1c40f',        // Amarelo dourado para moedas (círculos)
+        GEM: '#e74c3c',         // Vermelho para gemas (losangos)
+        DIAMOND: '#9b59b6',     // Roxo para diamantes (estrelas)
         PLAYER_BORDER: '#2c3e50',
         HIGHLIGHT: '#e74c3c'
     }

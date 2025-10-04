@@ -21,7 +21,10 @@ class GameClient {
                 WALL: '#2c3e50',
                 COIN: '#f1c40f',
                 GEM: '#e74c3c',
-                HIGHLIGHT: '#e74c3c'
+                DIAMOND: '#9b59b6',
+                HIGHLIGHT: '#e74c3c',
+                TEXT: '#2c3e50',
+                SCORE: '#27ae60'
             }
         };
         
@@ -39,6 +42,8 @@ class GameClient {
         this.socket.on('itemCollected', (data) => this.handleItemCollected(data));
         this.socket.on('playerDisconnected', (data) => this.handlePlayerDisconnected(data));
         this.socket.on('achievements', (achievements) => this.handleAchievements(achievements));
+        this.socket.on('gameStateUpdate', (data) => this.handleGameStateUpdate(data));
+        // Removido: itemsExpired event listener
 
         // Keyboard events
         document.addEventListener('keydown', (event) => this.handleKeyDown(event));
@@ -120,7 +125,12 @@ class GameClient {
             this.players[data.playerId].score = data.newScore;
         }
         this.globalScore = data.globalScore;
-        this.showMessage(`${data.playerName} coletou +${data.points} pontos!`, 'warning');
+        
+        // Verificar se há novo líder (só notifica quando há 2+ jogadores)
+        if (data.isNewLeader && data.newLeader) {
+            this.showMessage(`🏆 ${data.newLeader.name} é o novo líder com ${data.newLeader.score} pontos!`, 'success');
+        }
+        
         this.render();
         this.updateScoreboard();
     }
@@ -129,6 +139,13 @@ class GameClient {
         if (this.players[data.id]) {
             this.showMessage(`${data.name} saiu do jogo`, 'error');
             delete this.players[data.id];
+            
+            // Atualizar globalScore se fornecido
+            if (data.globalScore) {
+                this.globalScore = data.globalScore;
+                this.updateScoreboard();
+            }
+            
             this.render();
         }
     }
@@ -137,6 +154,13 @@ class GameClient {
         achievements.forEach(achievement => {
             this.showMessage(`🏆 ${achievement.message}`, 'info');
         });
+    }
+    
+    handleGameStateUpdate(data) {
+        if (data.items) {
+            this.items = data.items;
+            this.render();
+        }
     }
 
     // Manipular teclas
@@ -172,17 +196,96 @@ class GameClient {
 
     drawItems() {
         Object.values(this.items).forEach(item => {
+            const centerX = item.x + this.config.ITEM_SIZE / 2;
+            const centerY = item.y + this.config.ITEM_SIZE / 2;
+            const radius = this.config.ITEM_SIZE / 2;
+            
             // Cor baseada no tipo
-            this.ctx.fillStyle = item.type === 'coin' ? 
-                this.config.COLORS.COIN : this.config.COLORS.GEM;
+            let itemColor;
+            switch(item.type) {
+                case 'coin':
+                    itemColor = this.config.COLORS.COIN;
+                    break;
+                case 'gem':
+                    itemColor = this.config.COLORS.GEM;
+                    break;
+                case 'diamond':
+                    itemColor = this.config.COLORS.DIAMOND;
+                    break;
+                default:
+                    itemColor = this.config.COLORS.COIN;
+            }
             
-            this.ctx.fillRect(item.x, item.y, this.config.ITEM_SIZE, this.config.ITEM_SIZE);
+            this.ctx.fillStyle = itemColor;
             
-            // Borda para destaque
-            this.ctx.strokeStyle = this.config.COLORS.WALL;
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(item.x, item.y, this.config.ITEM_SIZE, this.config.ITEM_SIZE);
+            // Desenhar formas diferentes para cada tipo
+            switch(item.type) {
+                case 'coin':
+                    // Círculo para moedas
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, radius - 2, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    
+                    // Borda do círculo
+                    this.ctx.strokeStyle = '#000';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                    break;
+                    
+                case 'gem':
+                    // Losango para gemas
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(centerX, centerY - radius + 2);
+                    this.ctx.lineTo(centerX + radius - 2, centerY);
+                    this.ctx.lineTo(centerX, centerY + radius - 2);
+                    this.ctx.lineTo(centerX - radius + 2, centerY);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    
+                    // Borda do losango
+                    this.ctx.strokeStyle = '#000';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                    break;
+                    
+                case 'diamond':
+                    // Estrela para diamantes
+                    this.drawStar(centerX, centerY, 5, radius - 2, radius - 4);
+                    
+                    // Borda da estrela
+                    this.ctx.strokeStyle = '#000';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                    break;
+            }
         });
+    }
+    
+    // Função auxiliar para desenhar estrela
+    drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+        let rot = Math.PI / 2 * 3;
+        let x = cx;
+        let y = cy;
+        const step = Math.PI / spikes;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx, cy - outerRadius);
+        
+        for (let i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            this.ctx.lineTo(x, y);
+            rot += step;
+            
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            this.ctx.lineTo(x, y);
+            rot += step;
+        }
+        
+        this.ctx.lineTo(cx, cy - outerRadius);
+        this.ctx.closePath();
+        this.ctx.fill();
     }
 
     drawPlayers() {
@@ -197,13 +300,13 @@ class GameClient {
             this.ctx.strokeRect(player.x, player.y, this.config.PLAYER_SIZE, this.config.PLAYER_SIZE);
             
             // Nome do jogador
-            this.ctx.fillStyle = this.config.COLORS.WALL;
+            this.ctx.fillStyle = this.config.COLORS.TEXT;
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText(player.name, player.x + 15, player.y - 5);
             
             // Score do jogador
-            this.ctx.fillStyle = '#27ae60';
+            this.ctx.fillStyle = this.config.COLORS.SCORE;
             this.ctx.font = 'bold 10px Arial';
             this.ctx.fillText(`${player.score}pts`, player.x + 15, player.y + 45);
             
